@@ -38,25 +38,27 @@ UINT DectThread(LPVOID param)
 				pWnd->m_mvs.GetMatPic(src, 0);
 				if (pWnd->m_caption_flag)
 				{
-					if (pWnd->DoCaption(src, dst) == 0)
+					int rc = pWnd->DoCaption(src, dst);
+					if (rc == 0)
 					{
 						pWnd->ShowResult(dst, true, false);
 					}
 					else
 					{
-						pWnd->ShowResult(src, false, false);
+						pWnd->ShowResult(src, false, false, rc);
 					}
 					pWnd->m_caption_flag = false;
 				}
 				else
 				{
-					if (pWnd->DoMainDect(src, dst) == 0)
+					int rc = pWnd->DoMainDect(src, dst);
+					if (rc == 0)
 					{
 						pWnd->ShowResult(dst, true, true);
 					}
 					else
 					{
-						pWnd->ShowResult(src, false, true);
+						pWnd->ShowResult(src, false, true, rc);
 					}
 				}
 			}
@@ -236,7 +238,8 @@ HBRUSH CZDStation4Dlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		{
 			return m_greenBrush;
 		}
-		else if (str == _T("定位失败") || str == _T("标定失败"))
+		else if (str == _T("定位失败") || str == _T("标定失败") || str == _T("角度超出") 
+			|| str == _T("中心失败") || str == _T("六点失败"))
 		{
 			return m_redBrush;
 		}
@@ -494,6 +497,16 @@ void CZDStation4Dlg::OnBnClickedCaptions()
 	// TODO:  在此添加控件通知处理程序代码
 	m_caption_flag = true;
 	m_mvs.DoSoftwareOnce(0);
+	/*Mat src = imread("D:/1122/200312/20200409170729772.bmp"), dst;
+	int rc = DoMainDect(src, dst);
+	if (rc == 0)
+	{
+		ShowResult(dst, true, true);
+	}
+	else
+	{
+		ShowResult(src, false, true, rc);
+	}*/
 }
 
 int CZDStation4Dlg::WriteCaptionPoints()
@@ -559,7 +572,7 @@ int CZDStation4Dlg::getCenter(cv::Mat src, cv::Point3f &center)
 		if (tmpArea > 800000)
 		{
 			RotatedRect rrect = cv::minAreaRect(contours[x]);
-			if (fabs(rrect.size.width - rrect.size.height) > 10)
+			if (fabs(rrect.size.width - rrect.size.height) > 20)
 				continue;
 			center.x = rrect.center.x; center.y = rrect.center.y;
 			center.z = (rrect.size.height + rrect.size.width) / 4;
@@ -764,14 +777,13 @@ int CZDStation4Dlg::DoMainDect(cv::Mat src, cv::Mat &dst)
 	}
 	else return -2;
 	if (getCenter(gray, m_ncenter) != 0)
-		return -1;
-	rectangle(dst, g_roi, g_colors[4], 4);
+		return -3;
 	circle(dst, Point(m_ncenter.x, m_ncenter.y), m_ncenter.z, g_colors[0], 4);
 	circle(dst, Point(m_ncenter.x, m_ncenter.y), _LARGE_CIRCLE_R_, Scalar(255, 0, 0), 4);
 	circle(dst, Point(m_ncenter.x, m_ncenter.y), _SMALL_CIRCLE_R_, Scalar(255, 0, 0), 4);
 	std::vector<cv::Point3f> pts;
 	if (getSixPoint(src, pts, m_ncenter, _LARGE_CIRCLE_R_, _SMALL_CIRCLE_R_) != 0)
-		return -1;
+		return -4;
 	for (size_t i = 0; i < pts.size(); i++)
 		circle(dst, Point(pts[i].x, pts[i].y), pts[i].z, Scalar(0, 0, 255), 4);
 	rangePoints(m_ncenter, pts, m_nluosipts);
@@ -790,6 +802,23 @@ int CZDStation4Dlg::DoMainDect(cv::Mat src, cv::Mat &dst)
 		else
 			getCircleLinePoint(m_center, m_nluosipts[2 * i + 1], g_r, false, m_nluosipts2[i]);
 	}
+	//--------------
+	if (m_nluosipts2[0].x > m_nluosipts2[1].x || m_nluosipts2[0].x>m_nluosipts2[2].x)
+	{
+		if (m_single_flag)
+		{
+			getCircleLinePoint(m_center, m_nluosipts[5], g_r, false, m_nluosipts2[0]);
+			getCircleLinePoint(m_center, m_nluosipts[1], g_r, false, m_nluosipts2[1]);
+			getCircleLinePoint(m_center, m_nluosipts[3], g_r, false, m_nluosipts2[2]);
+		}
+		else
+		{
+			getCircleLinePoint(m_center, m_nluosipts[0], g_r, false, m_nluosipts2[0]);
+			getCircleLinePoint(m_center, m_nluosipts[2], g_r, false, m_nluosipts2[1]);
+			getCircleLinePoint(m_center, m_nluosipts[3], g_r, false, m_nluosipts2[2]);
+		}
+	}
+	//--------------
 	for (int i = 0; i < 3; i++)
 	{
 		if (i == 2)
@@ -825,8 +854,11 @@ int CZDStation4Dlg::DoMainDect(cv::Mat src, cv::Mat &dst)
 	catch (double ex)
 	{
 		if (ex == _OUT_OF_ANGLE_)
-			return -1;
+		{//角度超出
+			return -5;
+		}
 	}
+	
 	for (int i = 0; i < 6; i++)
 	{
 		m_nluosipts[i].z = m_nangle;
@@ -913,7 +945,7 @@ int CZDStation4Dlg::getCircleLinePoint(cv::Point3f start, cv::Point3f end, doubl
 	return 0;
 }
 
-void CZDStation4Dlg::ShowResult(cv::Mat src, bool flag, bool send_flag)
+void CZDStation4Dlg::ShowResult(cv::Mat src, bool flag, bool send_flag, int mode)
 {
 	if (send_flag)
 	{
@@ -926,7 +958,24 @@ void CZDStation4Dlg::ShowResult(cv::Mat src, bool flag, bool send_flag)
 		else
 		{
 			SendDataToRobot(false);
-			SetDlgItemText(IDC_RESULT_STR, L"定位失败");
+			switch (mode)
+			{
+			case 0:
+				SetDlgItemText(IDC_RESULT_STR, L"定位完成");
+				break;
+			case -3:
+				SetDlgItemText(IDC_RESULT_STR, L"中心失败");
+				break;
+			case -4:
+				SetDlgItemText(IDC_RESULT_STR, L"六点失败");
+				break;
+			case -5:
+				SetDlgItemText(IDC_RESULT_STR, L"角度超出");
+				break;
+			default:
+				SetDlgItemText(IDC_RESULT_STR, L"定位失败");
+				break;
+			}
 		}
 	}
 	else
@@ -938,7 +987,26 @@ void CZDStation4Dlg::ShowResult(cv::Mat src, bool flag, bool send_flag)
 		}
 		else
 		{
-			SetDlgItemText(IDC_RESULT_STR, L"标定失败");
+			switch (mode)
+			{
+			case 0:
+				SetDlgItemText(IDC_RESULT_STR, L"标定完成");
+				break;
+			case -3:
+				SetDlgItemText(IDC_RESULT_STR, L"中心失败");
+				break;
+			case -4:
+				SetDlgItemText(IDC_RESULT_STR, L"六点失败");
+				break;
+			case -5:
+				SetDlgItemText(IDC_RESULT_STR, L"角度超出");
+				break;
+			case -1:
+			case -2:
+			default:
+				SetDlgItemText(IDC_RESULT_STR, L"标定失败");
+				break;
+			}
 		}
 	}
 	ShowMatImg(src, IDC_SHOW_IMG, _WINDOW_NAME_);

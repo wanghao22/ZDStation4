@@ -88,7 +88,7 @@ public:
 	int calcX1X2ciecle(double a, double b, double c, double &x1, double &x2);
 	int getCircleLinePoint(cv::Point3f start, cv::Point3f end, double r,
 		bool flag, cv::Point3f &result);
-	void ShowResult(cv::Mat src, bool flag, bool send_flag);
+	void ShowResult(cv::Mat src, bool flag, bool send_flag, int mode = 0);
 	void ShowResult(cv::Point3f center, cv::Point3f* pts, cv::Point3f* pts2);
 	void ShowResult(const char* str, cv::Point3f pt);
 	double getAngleByLine(cv::Point3f center, cv::Point3f ptstart, cv::Point3f* pts, bool calc_flag = false);

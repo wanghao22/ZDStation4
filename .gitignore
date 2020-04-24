@@ -11,6 +11,7 @@
 *.obj
 *.log
 *.tlog
+*.ipch
 *.cki
 *.exe.config
 
@@ -26,6 +27,7 @@
 # Intermediate directorys
 Static/
 static/
+ipch/
 Debug/
 debug/
 !Windows/Common/Src/Debug/
