@@ -27,7 +27,7 @@
 //小圆半径
 #define _SMALL_CIRCLE_R_			440
 //螺丝孔最小面积
-#define _SIX_CIRCLE_MIN_AREA_		8000
+#define _SIX_CIRCLE_MIN_AREA_		7000
 //螺丝孔最大面积
 #define _SIX_CIRCLE_MAX_AREA_		15000
 //最小长宽差
@@ -44,6 +44,8 @@
 const double g_r = (21.0 - 14.0) / _PIX_TO_MM_;
 //给0
 //#define _FLP_GIVE_ZERO_	
+//是否显示详细信息
+#define _SHOW_MORE_DETILE_
 
 /*definition for returned value*/
 #define STATUS_OK               1

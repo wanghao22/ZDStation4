@@ -340,9 +340,10 @@ void CZDStation4Dlg::__init__()
 	else
 		m_open_camera_flag = true;
 	m_server_flag = m_server->Start(_TCP_SERVER_IP_, _TCP_SERVER_PORT_);
-	if (!m_server_flag)
+	if (FALSE == m_server_flag)
 		AfxMessageBox(L"开启服务器失败！");
 #endif
+	GetDlgItem(IDC_CAPTIONS)->EnableWindow(FALSE);
 }
 
 void CZDStation4Dlg::__exit__()
@@ -593,8 +594,8 @@ int CZDStation4Dlg::getSixPoint(cv::Mat src, std::vector<cv::Point3f> &points, c
 	else return -2;
 	points.clear();
 	Mat mask = Mat::zeros(src.size(), CV_8UC1);
-	circle(mask, Point(center.x, center.y), outr, cvScalarAll(0xff), -1);
-	circle(mask, Point(center.x, center.y), inrr, cvScalarAll(0x00), -1);
+	circle(mask, Point2f(center.x, center.y), outr, cvScalarAll(0xff), -1);
+	circle(mask, Point2f(center.x, center.y), inrr, cvScalarAll(0x00), -1);
 	Mat temp; gray.copyTo(temp, mask);
 	cv::threshold(temp, temp, _DECT_THRE_, 255, CV_THRESH_BINARY);
 	std::vector<std::vector<cv::Point>> contours;
@@ -651,8 +652,8 @@ double CZDStation4Dlg::getAngleOfLines(cv::Point3f pt1, cv::Point3f pt2, cv::Poi
 	{
 		double k1 = (pt2.y - pt1.y) / (pt2.x - pt1.x);
 		double k2 = (pt4.y - pt3.y) / (pt4.x - pt3.x);
-		float tan_k = 0; //直线夹角正切值
-		float lines_arctan;//直线斜率的反正切值
+		double tan_k = 0; //直线夹角正切值
+		double lines_arctan;//直线斜率的反正切值
 		tan_k = (k2 - k1) / (1 + k2*k1); //求直线夹角的公式
 		lines_arctan = atan(tan_k)* 180.0 / 3.1415926;
 		return lines_arctan;
@@ -675,7 +676,7 @@ int CZDStation4Dlg::rangePoints(cv::Point3f center, std::vector<cv::Point3f> pts
 {
 	if (pts.size() != 6)
 		return -1;
-	int mind = 3072 + 2048;
+	float mind = 3072.0f + 2048.0f;
 	int idx = 0;
 	for (int i = 0; i < 6; i++)
 	{
@@ -726,21 +727,21 @@ int CZDStation4Dlg::DoCaption(cv::Mat src, cv::Mat &dst)
 	if (getCenter(gray, m_center) != 0)
 		return -1;
 	rectangle(dst, g_roi, g_colors[4], 4);
-	circle(dst, Point(m_center.x, m_center.y), m_center.z, g_colors[0], 4);
-	circle(dst, Point(m_center.x, m_center.y), _LARGE_CIRCLE_R_, Scalar(255, 0, 0), 4);
-	circle(dst, Point(m_center.x, m_center.y), _SMALL_CIRCLE_R_, Scalar(255, 0, 0), 4);
+	circle(dst, Point2f(m_center.x, m_center.y), static_cast<int>(m_center.z), g_colors[0], 4);
+	circle(dst, Point2f(m_center.x, m_center.y), _LARGE_CIRCLE_R_, Scalar(255, 0, 0), 4);
+	circle(dst, Point2f(m_center.x, m_center.y), _SMALL_CIRCLE_R_, Scalar(255, 0, 0), 4);
 	std::vector<cv::Point3f> pts;
 	if (getSixPoint(src, pts, m_center, _LARGE_CIRCLE_R_, _SMALL_CIRCLE_R_) != 0)
 		return -1;
 	for (size_t i = 0; i < pts.size(); i++)
-		circle(dst, Point(pts[i].x, pts[i].y), pts[i].z, Scalar(0, 0, 255), 4);
+		circle(dst, Point2f(pts[i].x, pts[i].y), static_cast<int>(pts[i].z), Scalar(0, 0, 255), 4);
 	rangePoints(m_center, pts, m_luosipts);
 	for (int i = 0; i < 6; i++)
 	{
 		if (i == 5)
-			line(dst, Point(m_luosipts[0].x, m_luosipts[0].y), Point(m_luosipts[5].x, m_luosipts[5].y), g_colors[i], 4);
+			line(dst, Point2f(m_luosipts[0].x, m_luosipts[0].y), Point2f(m_luosipts[5].x, m_luosipts[5].y), g_colors[i], 4);
 		else
-			line(dst, Point(m_luosipts[i].x, m_luosipts[i].y), Point(m_luosipts[i + 1].x, m_luosipts[i + 1].y), g_colors[i], 4);
+			line(dst, Point2f(m_luosipts[i].x, m_luosipts[i].y), Point2f(m_luosipts[i + 1].x, m_luosipts[i + 1].y), g_colors[i], 4);
 	}
 	for (int i = 0; i < 3; i++)
 	{
@@ -752,9 +753,9 @@ int CZDStation4Dlg::DoCaption(cv::Mat src, cv::Mat &dst)
 	for (int i = 0; i < 3; i++)
 	{
 		if (i == 2)
-			line(dst, Point(m_luosipts2[0].x, m_luosipts2[0].y), Point(m_luosipts2[2].x, m_luosipts2[2].y), g_colors[i], 4);
+			line(dst, Point2f(m_luosipts2[0].x, m_luosipts2[0].y), Point2f(m_luosipts2[2].x, m_luosipts2[2].y), g_colors[i], 4);
 		else
-			line(dst, Point(m_luosipts2[i].x, m_luosipts2[i].y), Point(m_luosipts2[i + 1].x, m_luosipts2[i + 1].y), g_colors[i], 4);
+			line(dst, Point2f(m_luosipts2[i].x, m_luosipts2[i].y), Point2f(m_luosipts2[i + 1].x, m_luosipts2[i + 1].y), g_colors[i], 4);
 	}
 	WriteCaptionPoints();
 	return 0;
@@ -778,22 +779,22 @@ int CZDStation4Dlg::DoMainDect(cv::Mat src, cv::Mat &dst)
 	else return -2;
 	if (getCenter(gray, m_ncenter) != 0)
 		return -3;
-	circle(dst, Point(m_ncenter.x, m_ncenter.y), m_ncenter.z, g_colors[0], 4);
-	circle(dst, Point(m_ncenter.x, m_ncenter.y), _LARGE_CIRCLE_R_, Scalar(255, 0, 0), 4);
-	circle(dst, Point(m_ncenter.x, m_ncenter.y), _SMALL_CIRCLE_R_, Scalar(255, 0, 0), 4);
+	circle(dst, Point2f(m_ncenter.x, m_ncenter.y), static_cast<int>(m_ncenter.z), g_colors[0], 4);
+	circle(dst, Point2f(m_ncenter.x, m_ncenter.y), _LARGE_CIRCLE_R_, Scalar(255, 0, 0), 4);
+	circle(dst, Point2f(m_ncenter.x, m_ncenter.y), _SMALL_CIRCLE_R_, Scalar(255, 0, 0), 4);
 	std::vector<cv::Point3f> pts;
 	if (getSixPoint(src, pts, m_ncenter, _LARGE_CIRCLE_R_, _SMALL_CIRCLE_R_) != 0)
 		return -4;
 	for (size_t i = 0; i < pts.size(); i++)
-		circle(dst, Point(pts[i].x, pts[i].y), pts[i].z, Scalar(0, 0, 255), 4);
+		circle(dst, Point2f(pts[i].x, pts[i].y), static_cast<int>(pts[i].z), Scalar(0, 0, 255), 4);
 	rangePoints(m_ncenter, pts, m_nluosipts);
 	getAngleByLine(m_ncenter, m_luosipts[0], m_nluosipts);
 	for (int i = 0; i < 6; i++)
 	{
 		if (i == 5)
-			line(dst, Point(m_nluosipts[0].x, m_nluosipts[0].y), Point(m_nluosipts[5].x, m_nluosipts[5].y), g_colors[i], 4);
+			line(dst, Point2f(m_nluosipts[0].x, m_nluosipts[0].y), Point2f(m_nluosipts[5].x, m_nluosipts[5].y), g_colors[i], 4);
 		else
-			line(dst, Point(m_nluosipts[i].x, m_nluosipts[i].y), Point(m_nluosipts[i + 1].x, m_nluosipts[i + 1].y), g_colors[i], 4);
+			line(dst, Point2f(m_nluosipts[i].x, m_nluosipts[i].y), Point2f(m_nluosipts[i + 1].x, m_nluosipts[i + 1].y), g_colors[i], 4);
 	}
 	for (int i = 0; i < 3; i++)
 	{
@@ -822,14 +823,14 @@ int CZDStation4Dlg::DoMainDect(cv::Mat src, cv::Mat &dst)
 	for (int i = 0; i < 3; i++)
 	{
 		if (i == 2)
-			line(dst, Point(m_nluosipts2[0].x, m_nluosipts2[0].y), Point(m_nluosipts2[2].x, m_nluosipts2[2].y), g_colors[i], 4);
+			line(dst, Point2f(m_nluosipts2[0].x, m_nluosipts2[0].y), Point2f(m_nluosipts2[2].x, m_nluosipts2[2].y), g_colors[i], 4);
 		else
-			line(dst, Point(m_nluosipts2[i].x, m_nluosipts2[i].y), Point(m_nluosipts2[i + 1].x, m_nluosipts2[i + 1].y), g_colors[i], 4);
+			line(dst, Point2f(m_nluosipts2[i].x, m_nluosipts2[i].y), Point2f(m_nluosipts2[i + 1].x, m_nluosipts2[i + 1].y), g_colors[i], 4);
 	}
 	float dx = m_center.x - m_ncenter.x;
 	float dy = m_center.y - m_ncenter.y;
-	m_nluosipts2[3].x = dy*_PIX_TO_MM_;
-	m_nluosipts2[3].y = -dx*_PIX_TO_MM_;
+	m_nluosipts2[3].x = static_cast<float>(dy*_PIX_TO_MM_);
+	m_nluosipts2[3].y = static_cast<float>(-dx*_PIX_TO_MM_);
 #ifdef _USE_GLOG_
 	char pl[50]; sprintf_s(pl, "中心偏移量：dx = %.2f dy = %.2f", dx, dy);
 	if (m_log)
@@ -861,11 +862,11 @@ int CZDStation4Dlg::DoMainDect(cv::Mat src, cv::Mat &dst)
 	
 	for (int i = 0; i < 6; i++)
 	{
-		m_nluosipts[i].z = m_nangle;
+		m_nluosipts[i].z = static_cast<float>(m_nangle);
 	}
 	for (int i = 0; i < 3; i++)
 	{
-		m_nluosipts2[i].z = m_nangle;
+		m_nluosipts2[i].z = static_cast<float>(m_nangle);
 	}
 	ReGoToPoint(dx, dy);
 	return 0;
@@ -900,13 +901,13 @@ int CZDStation4Dlg::getCircleLinePoint(cv::Point3f start, cv::Point3f end, doubl
 	{
 		result1.x = end.x;
 		result2.x = end.x;
-		result1.y = end.y + r;
-		result2.y = end.y - r;
+		result1.y = static_cast<float>(end.y + r);
+		result2.y = static_cast<float>(end.y - r);
 	}
 	else if (start.y == end.y)
 	{
-		result1.x = end.x + r;
-		result2.x = end.x - r;
+		result1.x = static_cast<float>(end.x + r);
+		result2.x = static_cast<float>(end.x - r);
 		result1.y = end.y;
 		result2.y = end.y;
 	}
@@ -922,10 +923,10 @@ int CZDStation4Dlg::getCircleLinePoint(cv::Point3f start, cv::Point3f end, doubl
 		double x1, x2;
 		if (calcX1X2ciecle(A, B, C, x1, x2) == 0)
 		{
-			result1.x = x1;
-			result2.x = x2;
-			result1.y = k*result1.x + _b;
-			result2.y = k*result2.x + _b;
+			result1.x = static_cast<float>(x1);
+			result2.x = static_cast<float>(x2);
+			result1.y = static_cast<float>(k*result1.x + _b);
+			result2.y = static_cast<float>(k*result2.x + _b);
 		}
 		else
 		{
@@ -963,6 +964,7 @@ void CZDStation4Dlg::ShowResult(cv::Mat src, bool flag, bool send_flag, int mode
 			case 0:
 				SetDlgItemText(IDC_RESULT_STR, L"定位完成");
 				break;
+#ifdef _SHOW_MORE_DETILE_
 			case -3:
 				SetDlgItemText(IDC_RESULT_STR, L"中心失败");
 				break;
@@ -972,6 +974,11 @@ void CZDStation4Dlg::ShowResult(cv::Mat src, bool flag, bool send_flag, int mode
 			case -5:
 				SetDlgItemText(IDC_RESULT_STR, L"角度超出");
 				break;
+#else
+			case -3:
+			case -4:
+			case -5:
+#endif
 			default:
 				SetDlgItemText(IDC_RESULT_STR, L"定位失败");
 				break;
@@ -1115,6 +1122,7 @@ double CZDStation4Dlg::getAngleByLine(cv::Point3f center, cv::Point3f ptstart, c
 
 void CZDStation4Dlg::ReGoToPoint(float dx, float dy)
 {
+	//--中心偏移
 	for (int i = 0; i < 6; i++)
 	{
 		m_nluosipts[i].x -= dx;
@@ -1130,26 +1138,15 @@ void CZDStation4Dlg::ReGoToPoint(float dx, float dy)
 	{
 		x1 = m_nluosipts[i].x;
 		y1 = m_nluosipts[i].y;
-		m_nluosipts[i].x = (m_luosipts[i].y - y1)*_PIX_TO_MM_;//-x
-		m_nluosipts[i].y = -(m_luosipts[i].x - x1)*_PIX_TO_MM_;//z
+		m_nluosipts[i].x = static_cast<float>((m_luosipts[i].y - y1)*_PIX_TO_MM_);//-x
+		m_nluosipts[i].y = static_cast<float>(-(m_luosipts[i].x - x1)*_PIX_TO_MM_);//z
 	}
 	for (int i = 0; i < 3; i++)
 	{
 		x1 = m_nluosipts2[i].x;
 		y1 = m_nluosipts2[i].y;
-		m_nluosipts2[i].x = (m_luosipts2[i].y - y1)*_PIX_TO_MM_;
-		m_nluosipts2[i].y = -(m_luosipts2[i].x - x1)*_PIX_TO_MM_;
-	}
-	//--中心偏移
-	for (int i = 0; i < 6; i++)
-	{
-		m_nluosipts[i].x += (dy)*_PIX_TO_MM_;
-		m_nluosipts[i].y += -(dx)*_PIX_TO_MM_;
-	}
-	for (int i = 0; i < 3; i++)
-	{
-		m_nluosipts2[i].x += (dy)*_PIX_TO_MM_;
-		m_nluosipts2[i].y += -(dx)*_PIX_TO_MM_;
+		m_nluosipts2[i].x = static_cast<float>((m_luosipts2[i].y - y1)*_PIX_TO_MM_);
+		m_nluosipts2[i].y = static_cast<float>(-(m_luosipts2[i].x - x1)*_PIX_TO_MM_);
 	}
 }
 
@@ -1166,7 +1163,7 @@ void CZDStation4Dlg::SendDataToRobot(cv::Point3f pt)
 	char pl[150];
 	sprintf_s(pl, "%.2f;%.2f", pt.x, pt.y);
 	std::string str(pl);
-	m_server->Send(m_connect_id, (BYTE*)str.c_str(), str.length());
+	m_server->Send(m_connect_id, (BYTE*)str.c_str(), static_cast<int>(str.length()));
 }
 
 EnHandleResult CZDStation4Dlg::OnPrepareListen(ITcpServer * pSender, SOCKET soListen)
@@ -1222,7 +1219,7 @@ EnHandleResult CZDStation4Dlg::OnReceive(ITcpServer * pSender, CONNID dwConnID, 
 	{
 		char pl[10]; sprintf_s(pl, "%.2f;", m_nangle);
 		std::string str(pl);
-		m_server->Send(m_connect_id, (BYTE*)str.c_str(), str.length());
+		m_server->Send(m_connect_id, (BYTE*)str.c_str(), static_cast<int>(str.length()));
 	}
 	else if ((pl[0] == 'r' || pl[0] == 'R') && (pl[1] == 'e' || pl[1] == 'E'))
 	{

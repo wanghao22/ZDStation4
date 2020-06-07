@@ -95,7 +95,7 @@ public:
 	void ReGoToPoint(float dx, float dy);
 	ITcpServer* m_server;
 	CONNID m_connect_id;
-	bool m_server_flag;
+	BOOL m_server_flag;
 	CFont m_bigFont;
 	CBrush m_greenBrush;
 	CBrush m_redBrush;
@@ -104,5 +104,5 @@ public:
 	int m_cnt;
 	void SendDataToRobot(bool flag);
 	void SendDataToRobot(cv::Point3f pt);
-	bool m_single_flag;
+	BOOL m_single_flag;
 };
